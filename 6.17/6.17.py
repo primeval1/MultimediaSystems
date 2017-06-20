@@ -16,10 +16,6 @@ IMG_SIZE = []
 def quantizeImg(int, imgArr,imgHeight):
     for i in range(imgHeight):
         imgArr[i][:] = [x / int for x in imgArr[i]]
-    return imgArr
-
-def dequantizeImg(int,imgArr,imgHeight):
-    for i in range(imgHeight):
         imgArr[i][:] = [x * int for x in imgArr[i]]
     return imgArr
 
@@ -91,9 +87,13 @@ for i in range(nuOfFrames):
     imgHeight = im.height
     imgWidth = im.width
     imgArr =  quantizeImg(10,imgArr,imgHeight)
-    imgArr = dequantizeImg(10,imgArr,imgHeight)
     ARR_OF_FRAMES.append(imgArr)
-    if i != 0 : findDifferences(i,imgHeight,imgWidth)
+
+print("finish appending of frames")
+for i in range(nuOfFrames):
+    if i != 0 : findDifferences(i,RESOLUTION[0],RESOLUTION[1])
+
+print("finish finding differences")
 
 for i in range(nuOfFrames):
     print(i)
