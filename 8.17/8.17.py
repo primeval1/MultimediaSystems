@@ -7,7 +7,6 @@ from PIL import Image
 FFMPEG_BIN= 'C:/ffmpeg/bin/ffmpeg.exe'
 FFPROBE_BIN = "C:/ffmpeg/bin/ffprobe.exe"
 VIDEO_PATH = 'C:/Users/Dimitris/PycharmProjects/pikrakis/8.17/media/blocks.mp4'
-VIDEO_OUTPUT = 'C:/Users/Dimitris/PycharmProjects/pikrakis/8.17/results/video/out.mp4'
 def findVideoResolution(pathToInputVideo):
     cmd = FFPROBE_BIN+" -v quiet -print_format json -show_streams"
     args = shlex.split(cmd)
