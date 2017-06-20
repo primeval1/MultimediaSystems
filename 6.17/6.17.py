@@ -9,13 +9,37 @@ from PIL import Image
 FFMPEG_BIN= 'C:/ffmpeg/bin/ffmpeg.exe'
 FFPROBE_BIN = "C:/ffmpeg/bin/ffprobe.exe"
 VIDEO_PATH = 'C:/Users/Dimitris/PycharmProjects/pikrakis/6.17/media/blocks.mp4'
-def count_files(in_directory):
+VIDEO_OUTPUT = 'C:/Users/Dimitris/PycharmProjects/pikrakis/6.17/results/video/out.mp4'
+ARR_OF_FRAMES = []
+IMG_SIZE = []
+
+def quantizeImg(int, imgArr,imgHeight):
+    for i in range(imgHeight):
+        imgArr[i][:] = [x / int for x in imgArr[i]]
+    return imgArr
+
+def dequantizeImg(int,imgArr,imgHeight):
+    for i in range(imgHeight):
+        imgArr[i][:] = [x * int for x in imgArr[i]]
+    return imgArr
+
+def count_images(in_directory):
     joiner= (in_directory + os.path.sep).__add__
     return sum(
         os.path.isfile(filename)
         for filename
         in map(joiner, os.listdir(in_directory))
     )
+
+def findDifferences(i,imgHeight,imgWidth):
+    for k in range(imgHeight):
+        for j in range(imgWidth):
+            ARR_OF_FRAMES[i][k][j] -= ARR_OF_FRAMES[i-1][k][j]
+
+def restructFromDifferences(i,imgHeight,imgWidth):
+    for k in range(imgHeight):
+        for j in range(imgWidth):
+            ARR_OF_FRAMES[i][k][j] += ARR_OF_FRAMES[i - 1][k][j]
 
 def findVideoResolution(pathToInputVideo):
     cmd = FFPROBE_BIN+" -v quiet -print_format json -show_streams"
@@ -32,6 +56,22 @@ def findVideoResolution(pathToInputVideo):
 
     return result
 
+def createVideoFromFrames(path,imgHeight,imgWidth):
+    command = [FFMPEG_BIN,
+               '-y',  # (optional) overwrite output file if it exists
+               '-f', 'rawvideo',
+               '-vcodec', 'rawvideo',
+               '-s', str(imgWidth)+'x'+str(imgHeight),  # size of one frame
+               '-pix_fmt', 'rgb24',
+               '-r', '24',  # frames per second
+               '-i', '-',  # The imput comes from a pipe
+               '-an',  # Tells FFMPEG not to expect any audio
+               '-vcodec', 'mpeg', path]
+
+    pipe = sp.Popen(command, stdin=sp.PIPE, stderr=sp.PIPE)
+    for frame in ARR_OF_FRAMES:
+        pipe.stdin.write(frame.tostring())
+
 
 def framesToImages(pathToInputVideo):
     command = [FFMPEG_BIN,
@@ -41,8 +81,25 @@ def framesToImages(pathToInputVideo):
                ]
     p = sp.Popen(command)
 
+nuOfFrames = count_images('results')
+RESOLUTION =  findVideoResolution(VIDEO_PATH)
 
-framesToImages(VIDEO_PATH)
+for i in range(nuOfFrames):
+    print(i)
+    im = Image.open("results/out"+str(i+1)+".png")
+    imgArr = np.array(im)
+    imgHeight = im.height
+    imgWidth = im.width
+    imgArr =  quantizeImg(10,imgArr,imgHeight)
+    imgArr = dequantizeImg(10,imgArr,imgHeight)
+    ARR_OF_FRAMES.append(imgArr)
+    if i != 0 : findDifferences(i,imgHeight,imgWidth)
+
+for i in range(nuOfFrames):
+    print(i)
+    if i != 0: restructFromDifferences(i, RESOLUTION[0], RESOLUTION[1]);
+
+createVideoFromFrames(VIDEO_OUTPUT,RESOLUTION[0],RESOLUTION[1])
 
 
 
